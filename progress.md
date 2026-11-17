@@ -13,3 +13,4 @@
 - UI规格审查发现的顶栏旧筛选及最终质量审查发现的套餐预览异步失效问题均已修复，Node行为回归覆盖筛选传播与延迟响应；独立UI规格与整体质量复核通过。
 - 最终本地验证：78 tests passed；Ruff检查与格式检查、JS语法、wheel/sdist构建通过。既有Starlette测试客户端弃用提示1条，不影响运行。Compose YAML结构通过，未运行Docker。
 - 本机生成的随机密码/会话密钥/MCP token未出现在候选Git文件中；`.env`、数据库、运行截图和备份目录均被忽略。
+- `9e9c529` 已提交并推送至 origin/feature/order-sync-and-mcp，develop仍为初始基线，未执行分支合并。HTTPS OAuth不含workflow scope，使用本机已有且已验证的GitHub SSH认证成功推送，未改全局Git配置或扩大token权限。
