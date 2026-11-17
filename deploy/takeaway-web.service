@@ -1,0 +1,19 @@
+[Unit]
+Description=餐账 Web 与 MCP HTTP
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=takeaway
+WorkingDirectory=/opt/takeaway-insight
+EnvironmentFile=/opt/takeaway-insight/.env
+ExecStart=/opt/takeaway-insight/.venv/bin/takeaway serve --host 127.0.0.1 --port 8765
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
