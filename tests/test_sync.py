@@ -89,6 +89,14 @@ async def test_sync_range_rejects_invalid_range(service):
         await runner.sync_day(999, date(2026, 11, 17))
 
 
+async def test_official_api_is_marked_unavailable_instead_of_attempting_merchant_login(service):
+    result = await SyncRunner(service, Settings()).sync_day(1, date(2026, 11, 17))
+    assert result["status"] == "error"
+    assert "暂不可用" in result["error"]
+    assert "浏览器" in result["error"]
+    assert "暂不可用" in service.list_merchants()[0]["connector_status"]
+
+
 async def test_cancellation_waits_for_atomic_commit_and_keeps_lease(service):
     from takeaway_insight.models import Merchant
 

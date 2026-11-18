@@ -3,13 +3,20 @@
 import csv
 import io
 import secrets
+import shutil
 from contextlib import asynccontextmanager
 from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field, model_validator
@@ -17,6 +24,7 @@ from sqlalchemy.exc import IntegrityError
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.routing import Route
 
+from takeaway_insight.agent_jobs import DEFAULT_PROMPT, AgentJobs, AgentTaskInput
 from takeaway_insight.config import PACKAGE_DIR, Settings
 from takeaway_insight.contracts import NormalizedLine
 from takeaway_insight.db import Database
@@ -81,6 +89,7 @@ def create_app(settings: Settings, database: Database | None = None) -> FastAPI:
     database = database or Database(settings.database_url)
     service = InsightService(database)
     runner = SyncRunner(service, settings)
+    agent_jobs = AgentJobs(database, settings)
     mcp = create_mcp_server(service, settings)
     mcp_http = mcp.streamable_http_app()
 
@@ -94,6 +103,7 @@ def create_app(settings: Settings, database: Database | None = None) -> FastAPI:
     app = FastAPI(title="餐账", version="0.1.0", lifespan=lifespan, docs_url=None, redoc_url=None)
     app.state.service = service
     app.state.runner = runner
+    app.state.agent_jobs = agent_jobs
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.secret_key,
@@ -184,6 +194,53 @@ def create_app(settings: Settings, database: Database | None = None) -> FastAPI:
             "today": datetime.now(ZoneInfo(settings.timezone)).date().isoformat(),
             "mcp_http_enabled": len(settings.mcp_token) >= 32,
         }
+
+    @app.get("/api/agent-info", dependencies=[Depends(require_session)])
+    def agent_info():
+        return {
+            "default_prompt": DEFAULT_PROMPT,
+            "project_dir": str(agent_jobs.project_dir),
+            "executables": {
+                "antigravity": shutil.which(settings.antigravity_executable),
+                "dsh": shutil.which(settings.dsh_executable),
+            },
+            "execution_mode": "full-access",
+            "sandbox": False,
+        }
+
+    @app.get("/api/agent-tasks", dependencies=[Depends(require_session)])
+    def agent_tasks():
+        return {"items": agent_jobs.list_tasks()}
+
+    @app.post("/api/agent-tasks", status_code=201, dependencies=[Depends(require_write)])
+    def create_agent_task(data: AgentTaskInput):
+        return agent_jobs.create_task(data)
+
+    @app.put("/api/agent-tasks/{task_id}", dependencies=[Depends(require_write)])
+    def update_agent_task(task_id: int, data: AgentTaskInput):
+        return agent_jobs.update_task(task_id, data)
+
+    @app.post(
+        "/api/agent-tasks/{task_id}/run", status_code=202, dependencies=[Depends(require_write)]
+    )
+    def start_agent(task_id: int, data: dict):
+        return agent_jobs.enqueue(task_id, request=str(data.get("request", "")))
+
+    @app.get("/api/agent-runs", dependencies=[Depends(require_session)])
+    def agent_runs():
+        return {"items": agent_jobs.list_runs()}
+
+    @app.get("/api/agent-runs/{run_id}", dependencies=[Depends(require_session)])
+    def agent_run(run_id: str):
+        return agent_jobs.get_run(run_id)
+
+    @app.get(
+        "/api/agent-runs/{run_id}/log",
+        response_class=PlainTextResponse,
+        dependencies=[Depends(require_session)],
+    )
+    def agent_log(run_id: str):
+        return agent_jobs.read_log(run_id)
 
     @app.get("/api/merchants", dependencies=[Depends(require_session)])
     def merchants():
@@ -349,7 +406,16 @@ def create_app(settings: Settings, database: Database | None = None) -> FastAPI:
 
     @app.get("/{page:path}", response_class=HTMLResponse)
     async def page(request: Request, page: str):
-        if page not in ("", "orders", "sales", "rules", "merchants", "syncs", "mcp-guide"):
+        if page not in (
+            "",
+            "orders",
+            "sales",
+            "rules",
+            "merchants",
+            "syncs",
+            "mcp-guide",
+            "agents",
+        ):
             raise HTTPException(404)
         if not request.session.get("authenticated"):
             return RedirectResponse("/login", 303)

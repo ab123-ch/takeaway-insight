@@ -167,3 +167,40 @@ class SyncRun(Base):
     updated: Mapped[int] = mapped_column(Integer, default=0)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     merchant: Mapped[Merchant] = relationship()
+
+
+class AgentTask(Base):
+    __tablename__ = "agent_tasks"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), unique=True)
+    runner: Mapped[str] = mapped_column(String(40))
+    command: Mapped[list] = mapped_column(JSON, default=list)
+    arguments: Mapped[list] = mapped_column(JSON, default=list)
+    prompt: Mapped[str] = mapped_column(Text)
+    variables: Mapped[dict] = mapped_column(JSON, default=dict)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    interval_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    next_run_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class AgentRun(Base):
+    __tablename__ = "agent_runs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("agent_tasks.id"), index=True)
+    trigger: Mapped[str] = mapped_column(String(30))
+    request: Mapped[str] = mapped_column(Text, default="")
+    runner: Mapped[str] = mapped_column(String(40))
+    command: Mapped[list] = mapped_column(JSON)
+    prompt: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(30), default="queued", index=True)
+    pid: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    exit_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    log_path: Mapped[str] = mapped_column(Text)
+    error: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    started_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    task: Mapped[AgentTask] = relationship()

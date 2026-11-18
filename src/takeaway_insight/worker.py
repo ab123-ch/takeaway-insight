@@ -1,10 +1,8 @@
 """独立调度进程。Web 多 worker 不会重复创建调度器。"""
 
-import asyncio
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import func, or_, select
 
 from takeaway_insight.models import Merchant, SyncRun, utcnow
@@ -35,32 +33,6 @@ def due_sync_dates(database, now=None):
 
 
 async def run_worker(service, settings):
-    from takeaway_insight.sync import SyncRunner
+    from takeaway_insight.agent_jobs import AgentJobs, run_agent_worker
 
-    runner = SyncRunner(service, settings)
-    semaphore = asyncio.Semaphore(4)
-
-    async def run_merchant(merchant_id, dates):
-        async with semaphore:
-            for target in dates:
-                await runner.sync_day(merchant_id, target)
-
-    async def tick():
-        work = await asyncio.to_thread(due_sync_dates, service.db)
-        await asyncio.gather(*(run_merchant(merchant_id, dates) for merchant_id, dates in work))
-
-    scheduler = AsyncIOScheduler(timezone="UTC")
-    scheduler.add_job(
-        tick,
-        "interval",
-        seconds=30,
-        max_instances=1,
-        coalesce=True,
-        next_run_time=utcnow(),
-        misfire_grace_time=60,
-    )
-    scheduler.start()
-    try:
-        await asyncio.Event().wait()
-    finally:
-        scheduler.shutdown(wait=False)
+    await run_agent_worker(AgentJobs(service.db, settings))

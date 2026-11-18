@@ -1,0 +1,13 @@
+# 与已登录的CDP浏览器连接；按实际情况修改browser-url。
+- id: mcp-merchant-browser
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: merchant-browser
+    transport: stdio
+    command: npx
+    args:
+      - --yes
+      - chrome-devtools-mcp@1.13.0
+      - --browser-url=http://127.0.0.1:9222
+      - --allow-unrestricted-paths
+      - --no-usage-statistics

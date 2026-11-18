@@ -1,5 +1,5 @@
 [Unit]
-Description=餐账独立订单同步
+Description=餐账本地Agent定时任务
 After=network-online.target takeaway-web.service
 Wants=network-online.target
 
@@ -11,8 +11,6 @@ EnvironmentFile=/opt/takeaway-insight/.env
 ExecStart=/opt/takeaway-insight/.venv/bin/takeaway worker
 Restart=on-failure
 RestartSec=5
-NoNewPrivileges=true
-PrivateTmp=true
 UMask=0077
 
 [Install]

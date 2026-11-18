@@ -6,7 +6,7 @@ from typing import Any, Literal, Protocol
 
 from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
-Platform = Literal["eleme", "jd"]
+Platform = Literal["meituan", "eleme", "jd"]
 OrderStatus = Literal["pending", "accepted", "completed", "cancelled"]
 RefundStatus = Literal["none", "partial", "full", "unknown"]
 

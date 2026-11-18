@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     timezone: str = "Asia/Shanghai"
     public_url: str = "http://127.0.0.1:8765"
     sync_lease_seconds: int = Field(default=300, ge=60)
+    agent_project_dir: str = ""
+    agent_log_dir: str = "data/agent-runs"
+    antigravity_executable: str = "agy"
+    dsh_executable: str = "dsh"
 
     def require_web_secrets(self) -> None:
         if not self.secret_key or len(self.secret_key) < 32:

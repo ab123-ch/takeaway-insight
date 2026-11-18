@@ -57,9 +57,15 @@ def main():
     serve = commands.add_parser("serve", help="启动网页与 MCP HTTP")
     serve.add_argument("--host")
     serve.add_argument("--port", type=int)
-    commands.add_parser("worker", help="启动独立定时同步进程")
+    commands.add_parser("worker", help="启动本地Agent定时任务进程")
     commands.add_parser("demo", help="显式导入演示订单；不调用平台")
     commands.add_parser("db-upgrade", help="升级数据库结构")
+    agent_init = commands.add_parser("agent-init", help="建立本地Agent采集任务")
+    agent_init.add_argument("--runner", choices=["antigravity", "dsh"], default="antigravity")
+    agent_init.add_argument("--enable", action="store_true", help="启用每15分钟定时执行")
+    agent_run = commands.add_parser("agent-run", help="立即启动一个本地Agent任务")
+    agent_run.add_argument("--task", type=int, required=True)
+    agent_run.add_argument("--request", default="")
     sync = commands.add_parser("sync", help="同步指定门店与日期")
     sync.add_argument("--merchant", type=int, required=True)
     sync.add_argument("--date", type=date.fromisoformat, required=True)
@@ -93,6 +99,54 @@ def main():
             from takeaway_insight.worker import run_worker
 
             asyncio.run(run_worker(service, settings))
+        elif args.command == "agent-init":
+            from takeaway_insight.agent_jobs import AgentJobs, AgentTaskInput
+
+            jobs = AgentJobs(database, settings)
+            name = "三平台自动采集"
+            existing = next((task for task in jobs.list_tasks() if task["name"] == name), None)
+            if existing:
+                result = existing
+                if args.enable and not existing["enabled"]:
+                    values = {
+                        key: value
+                        for key, value in existing.items()
+                        if key not in ("id", "next_run_at")
+                    }
+                    result = jobs.update_task(
+                        existing["id"], AgentTaskInput(**(values | {"enabled": True}))
+                    )
+            else:
+                result = jobs.create_task(
+                    AgentTaskInput(
+                        name=name,
+                        runner=args.runner,
+                        enabled=args.enable,
+                        interval_minutes=15,
+                        arguments=["--patch", str(jobs.project_dir / "config/dsh.browser.yml")]
+                        if args.runner == "dsh"
+                        else [],
+                        variables={"cdp_url": "http://127.0.0.1:9222"},
+                    )
+                )
+            print(json.dumps(result, ensure_ascii=False))
+        elif args.command == "agent-run":
+            from takeaway_insight.agent_jobs import AgentExecutor, AgentJobs
+
+            jobs = AgentJobs(database, settings)
+            run = jobs.enqueue(args.task, request=args.request)
+            result = asyncio.run(AgentExecutor(jobs).run(run["id"]))
+            print(
+                json.dumps(
+                    {
+                        key: result[key]
+                        for key in ("id", "status", "exit_code", "log_path", "error")
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            if result["status"] != "completed":
+                raise SystemExit(1)
         elif args.command == "sync":
             from takeaway_insight.sync import SyncRunner
 

@@ -93,6 +93,32 @@ def test_unsafe_csv_cells_are_escaped():
     assert csv_cell("半只鸡") == "半只鸡"
 
 
+def test_agent_task_routes_create_queue_and_show_logs(client):
+    import sys
+
+    csrf = login(client)
+    headers = {"X-CSRF-Token": csrf}
+    payload = {
+        "name": "自动采集",
+        "runner": "custom",
+        "command": [sys.executable, "-c", "print('完成')"],
+        "prompt": "由Agent自行入库核对 {{ today }}",
+        "enabled": True,
+        "interval_minutes": 15,
+    }
+    response = client.post("/api/agent-tasks", json=payload, headers=headers)
+    assert response.status_code == 201
+    task_id = response.json()["id"]
+    assert client.get("/agents").status_code == 200
+    run = client.post(
+        f"/api/agent-tasks/{task_id}/run", json={"request": "采集今天"}, headers=headers
+    )
+    assert run.status_code == 202
+    assert run.json()["status"] == "queued"
+    assert "采集今天" in client.get("/api/agent-runs/" + run.json()["id"]).json()["prompt"]
+    assert "等待worker" in client.get("/api/agent-runs/" + run.json()["id"] + "/log").text
+
+
 def test_csv_carries_unknown_jd_refund_coverage(client):
     from takeaway_insight.contracts import NormalizedLine, NormalizedOrder
 

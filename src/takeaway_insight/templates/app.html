@@ -8,7 +8,7 @@
   <title>餐账 · 门店经营工作台</title>
   <link rel="icon" href="/static/brand.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/app.css">
-  <script src="/static/app.js" defer></script>
+  <script src="/static/agent-tasks.js" defer></script><script src="/static/app.js" defer></script>
 </head>
 <body data-page="{{ page }}">
   <a class="skip-link" href="#main-content">跳到主要内容</a>
@@ -16,7 +16,7 @@
     <a class="brand" href="/" aria-label="餐账首页"><img src="/static/brand.svg" alt="" width="38" height="38"><span>餐账<small>每一份，都有数</small></span></a>
     <div class="nav-label">经营工作台</div>
     <nav aria-label="主导航">
-      {% set links = [('dashboard','/','经营概览','overview'), ('orders','/orders','订单明细','orders'), ('sales','/sales','商品销量','sales'), ('rules','/rules','套餐拆分','split'), ('merchants','/merchants','门店接入','store'), ('syncs','/syncs','同步记录','sync'), ('mcp-guide','/mcp-guide','MCP 分析接入','mcp')] %}
+      {% set links = [('dashboard','/','经营概览','overview'), ('agents','/agents','Agent 定时任务','sync'), ('orders','/orders','订单明细','orders'), ('sales','/sales','商品销量','sales'), ('rules','/rules','套餐拆分','split'), ('merchants','/merchants','门店接入','store'), ('syncs','/syncs','旧 API 记录','sync'), ('mcp-guide','/mcp-guide','MCP 分析接入','mcp')] %}
       {% for key, path, label, icon in links %}<a href="{{ path }}" class="nav-link{% if page == key %} active{% endif %}"{% if page == key %} aria-current="page"{% endif %}><span class="nav-icon" data-icon="{{ icon }}" aria-hidden="true"></span>{{ label }}</a>{% endfor %}
     </nav>
     <div class="sidebar-bottom"><span class="quiet-dot"></span><span>订单留痕 · 按店管理</span><p>供货判断，从准确的销量开始。</p></div>
@@ -33,7 +33,7 @@
       <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
       <section class="filter-bar" id="filter-bar" aria-label="筛选条件" hidden>
         <div class="filter-group"><label for="merchant-filter">门店</label><select id="merchant-filter"><option value="">全部门店</option></select></div>
-        <div class="filter-group"><label for="platform-filter">平台</label><select id="platform-filter"><option value="">全部平台</option><option value="eleme">饿了么 / 淘宝闪购</option><option value="jd">京东秒送</option></select></div>
+        <div class="filter-group"><label for="platform-filter">平台</label><select id="platform-filter"><option value="">全部平台</option><option value="meituan">美团外卖</option><option value="eleme">饿了么 / 淘宝闪购</option><option value="jd">京东秒送</option></select></div>
         <div class="filter-group date-filter"><label for="start-date">营业日期</label><div class="date-range"><input type="date" id="start-date" aria-label="开始日期"><span aria-hidden="true">至</span><input type="date" id="end-date" aria-label="结束日期"></div></div>
         <div class="filter-shortcuts" aria-label="日期快捷选择"><button class="text-button" data-action="today">今天</button><button class="text-button" data-action="week">近 7 天</button><button class="button compact" id="apply-filter">查询</button></div>
       </section>

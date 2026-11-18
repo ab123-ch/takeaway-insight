@@ -8,8 +8,9 @@ from uuid import uuid4
 
 from sqlalchemy import or_, update
 
+from takeaway_insight.availability import OFFICIAL_API_UNAVAILABLE
 from takeaway_insight.config import Settings
-from takeaway_insight.contracts import ProviderError
+from takeaway_insight.contracts import ConfigurationError, ProviderError
 from takeaway_insight.models import Merchant, SyncRun, utcnow
 from takeaway_insight.services import InsightService
 
@@ -17,9 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 def default_provider(platform):
-    from takeaway_insight.providers import get_provider
-
-    return get_provider(platform)
+    # 暂不可用：保留 providers 内的官方合同与单元测试，实际任务不得误报可接入。
+    raise ConfigurationError(OFFICIAL_API_UNAVAILABLE)
 
 
 class SyncRunner:

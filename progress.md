@@ -14,3 +14,12 @@
 - 最终本地验证：78 tests passed；Ruff检查与格式检查、JS语法、wheel/sdist构建通过。既有Starlette测试客户端弃用提示1条，不影响运行。Compose YAML结构通过，未运行Docker。
 - 本机生成的随机密码/会话密钥/MCP token未出现在候选Git文件中；`.env`、数据库、运行截图和备份目录均被忽略。
 - `9e9c529` 已提交并推送至 origin/feature/order-sync-and-mcp，develop仍为初始基线，未执行分支合并。HTTPS OAuth不含workflow scope，使用本机已有且已验证的GitHub SSH认证成功推送，未改全局Git配置或扩大token权限。
+
+## 2026-11-18
+- 按用户最终澄清改为本地定时Agent启动器，网页管理任务、任意提示词/参数、立即执行和进程日志；无消息机器人集成。
+- 内置agy/dsh使用完整执行权限，启动器不设置沙箱、工具/网址白名单或任务运行时限，不要求固定JSON，不代理采集和写库。
+- 增加数据库技能及inspect/sql/ingest/reconcile工具，支持任意SQL读写和三平台订单；套餐沿用原订单原商品关联。临时原生子进程完成入库和独立核对。
+- 原官方API保留并标记暂不可用，worker停止轮询旧API。新增迁移002与CDP浏览器MCP配置，技能/提示词随wheel分发。
+- 独立审查发现的模板错误阻塞队列、日志路径失败挂起、核对漏关键字段/无门店假成功均已复现并补回归修复；CLI重复enable生效。补充验证SIGTERM正常收尾及重复商品行ID核对。
+- 本地102项测试通过，Ruff与格式/JS检查通过；实际网页创建/编辑/排队/worker执行/查看日志、390px无整页横向溢出且无JS错误。浏览器MCP初始化成功，33工具含evaluate_script。
+- 真实模型与三个商家后台尚未联调，未采集生产订单；本机dsh/Docker未安装。保留已确认feature分支，不合并。

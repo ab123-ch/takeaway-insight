@@ -1,12 +1,12 @@
 # 餐账 · Takeaway Insight
 
-Python 外卖订单与商品销量工作台，面向自有门店的饿了么／淘宝闪购、京东秒送订单。支持本地启动、服务器部署以及标准 MCP 查询，后续可交给 DeepSeek dsh 读取经营数据、结合库存与配方分析备货。
+Python 外卖订单与商品销量工作台，面向自有门店的美团外卖、饿了么／淘宝闪购、京东秒送订单。支持本地启动、服务器部署以及标准 MCP 查询，后续可交给 DeepSeek dsh 读取经营数据、结合库存与配方分析备货。
 
-**接入状态：两平台连接器已实现，尚无真实商家授权进行联调。** 饿了么按官方 SDK 合同实现；京东公开分页响应说明存在矛盾，连接器严格校验并在未知响应时失败。京东退款/售后明细尚未接入，其商品量为有效状态订单的原始下单量，页面与 MCP 均显示“售后未对账”。这些限制不会通过演示数据或其他门店配置掩盖。详见 [平台说明](docs/platforms.md)。
+**官方 API 接入暂不可用。** 相关代码与配置保留，但已停止实际调用；现有商家后台账号不能直接用于开放平台 API 授权。当前由定时任务调用本地agy/dsh，通过CDP浏览器自主采集、调用数据库技能入库并独立核对。饿了么官方 SDK 合同和京东待核对合同仅供后续联调参考，不能当作已接通。详见 [平台说明](docs/platforms.md)。
 
 ## 快速启动
 
-需要 Python 3.12–3.14 和 [uv](https://docs.astral.sh/uv/getting-started/installation/)。
+需要本地已配置账号的agy或dsh、CDP浏览器、Node/npm，以及Python 3.12–3.14 和 [uv](https://docs.astral.sh/uv/getting-started/installation/)。
 
 ```bash
 git clone https://github.com/ab123-ch/takeaway-insight.git
@@ -14,16 +14,21 @@ cd takeaway-insight
 git switch feature/order-sync-and-mcp
 uv sync --locked
 uv run takeaway init
+uv run takeaway agent-init --runner antigravity --enable
 uv run takeaway serve
 ```
 
 打开 **http://127.0.0.1:8765**。用户名默认为 `admin`；初次初始化会生成随机管理员密码、会话密钥和 MCP token，保存在本机 `.env`，权限600。请在本机查看密码；已有配置不会被覆盖。
 
-另开终端，在同一工程目录运行定时同步进程：
+另开终端，在同一工程目录运行Agent定时任务进程：
 
 ```bash
 uv run takeaway worker
 ```
+
+打开 `/agents` 编辑任务间隔、提示词及指定Agent参数。agy可填 `["--agent","名称"]`；dsh使用自己的`--patch`配置。默认提示词指向随包分发的数据库技能，Agent负责采集、入库及整体核对，启动器不要求固定JSON输出。默认浏览器MCP连接http://127.0.0.1:9222；端点及dsh配置见[执行器说明](config/agents/README.md)。
+
+本地原生运行，agy/dsh使用完整权限、关闭沙箱和工具确认；代码不设置Agent任务运行时限或工具/网址白名单。网页仍保留管理员登录。进程退出0只代表执行器结束，数据核对结论请查看Agent日志报告。
 
 初始数据库为空。想先体验页面，可**显式**导入演示订单：
 
@@ -39,12 +44,13 @@ uv run takeaway demo
 - 订单明细：保留订单号、流水号、下单日期、原商品行及拆分子项，分页搜索并查看状态。
 - 套餐拆分：平台结构化明细优先，门店精确匹配规则其次；顶层加号推断标记待确认，括号内的加号不拆。
 - 拆分规则：数量倍数与单位、拆分预览、按门店重算历史。
-- 门店接入：独立环境变量引用、同步间隔和开关；配置缺失显式失败。
-- 同步记录：独立定时进程、手动单日/区间补拉、完整分页、事务入库和数据库租约。
+- Agent定时任务：选择agy/dsh/自定义命令、指定Agent、编辑提示词与间隔、手动执行、查看日志。
+- 数据库技能：查看真实表结构、任意SQL读写、复用现有订单入库与独立核对；支持美团/饿了么/京东。
+- 门店管理与旧API记录：保留官方接口配置和记录，明确标记暂不可用；不再由worker轮询旧API。
 - CSV 导出：中文 UTF-8 BOM 文件，保持筛选口径并处理表格公式字符。
 - MCP：5个只读工具，本地 stdio 和带独立 Bearer token 的 Streamable HTTP。
 
-“凭据已配置”只表示环境变量存在，不表示商家授权、权限和接口响应已经通过验证。需在各平台申请相应订单和退款权限，再向应用提供有效凭据；当前不自动执行 OAuth 授权或 token 刷新。
+“凭据已配置”只表示环境变量存在，不表示商家授权、权限和接口响应已经通过验证。当前浏览器采集使用已登录商家后台，旧API凭据仅供后续接口联调。
 
 ## 套餐如何记账
 
@@ -72,13 +78,15 @@ uv run takeaway demo
 
 | 文档 | 内容 |
 | --- | --- |
+| [Agent与CDP](config/agents/README.md) | 原生执行器、完整权限、指定Agent和浏览器MCP |
+| [提示词与数据库技能](config/prompts/README.md) | 实际默认提示词、变量、查表/入库/核对步骤 |
 | [平台接入](docs/platforms.md) | 官方来源、凭据、签名、分页、退款及套餐数量限制 |
 | [本地／服务器部署](docs/deployment.md) | CLI、Compose＋PostgreSQL、systemd、HTTPS、备份和补拉 |
 | [MCP 与 dsh](docs/mcp.md) | stdio / HTTP 配置、工具与查询示例 |
 | [网页 API](docs/web-api.md) | 会话、CSRF、查询与管理接口 |
 | [设计说明](docs/plans/2026-11-17-design.md) | 架构与业务边界 |
 
-服务器部署提供 [Dockerfile](Dockerfile)、[compose.yaml](compose.yaml) 和 [systemd/Nginx 示例](deploy/)。web、worker 和迁移必须使用同一个数据库。Compose使用PostgreSQL前须按部署文档修改 `.env` 数据库URL；本地默认SQLite。开发机器未安装Docker，容器和PostgreSQL仍待目标环境联调。
+Agent worker推荐原生服务器部署，使用已配置模型和浏览器登录态的服务用户。提供[systemd/Nginx 示例](deploy/)；现有[Dockerfile](Dockerfile)和[compose.yaml](compose.yaml)不含agy/dsh/Node，不能直接用于完整Agent执行。web、worker 和迁移必须使用同一个数据库。Compose使用PostgreSQL前须按部署文档修改 `.env` 数据库URL；本地默认SQLite。开发机器未安装Docker，容器和PostgreSQL仍待目标环境联调。
 
 ## 开发与验证
 

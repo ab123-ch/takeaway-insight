@@ -12,7 +12,7 @@ def test_app_navigation_and_accessible_work_area_are_rendered_without_remote_ass
     html = environment.get_template("app.html").render(
         page="orders", csrf_token="test", username="admin"
     )
-    for path in ("/orders", "/sales", "/rules", "/merchants", "/syncs", "/mcp-guide"):
+    for path in ("/orders", "/sales", "/rules", "/merchants", "/syncs", "/mcp-guide", "/agents"):
         assert f'href="{path}"' in html
     assert 'id="main-content"' in html
     assert 'id="page-content"' in html

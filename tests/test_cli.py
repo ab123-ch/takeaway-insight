@@ -9,6 +9,30 @@ from takeaway_insight.demo import seed_demo
 from takeaway_insight.services import InsightService
 
 
+def test_agent_init_can_enable_existing_task_and_configures_dsh_browser(
+    tmp_path, monkeypatch, capsys
+):
+    import sys
+
+    from takeaway_insight.agent_jobs import AgentJobs
+    from takeaway_insight.cli import main
+    from takeaway_insight.config import Settings
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("TAKEAWAY_DATABASE_URL", f"sqlite:///{tmp_path}/cli.db")
+    monkeypatch.setattr(sys, "argv", ["takeaway", "agent-init", "--runner", "dsh"])
+    main()
+    monkeypatch.setattr(sys, "argv", ["takeaway", "agent-init", "--enable"])
+    main()
+    db = Database(f"sqlite:///{tmp_path}/cli.db")
+    tasks = AgentJobs(db, Settings()).list_tasks()
+    assert len(tasks) == 1 and tasks[0]["enabled"]
+    assert tasks[0]["runner"] == "dsh"
+    assert tasks[0]["arguments"] == ["--patch", str(tmp_path / "config/dsh.browser.yml")]
+    capsys.readouterr()
+    db.dispose()
+
+
 def test_initialization_generates_unique_private_secrets_and_preserves_existing_config(tmp_path):
     initialize(tmp_path)
     path = tmp_path / ".env"

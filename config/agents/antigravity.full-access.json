@@ -1,0 +1,7 @@
+{
+  "agentMode": "",
+  "toolPermission": "always-proceed",
+  "artifactReviewPolicy": "always-proceed",
+  "enableTerminalSandbox": false,
+  "allowNonWorkspaceAccess": true
+}

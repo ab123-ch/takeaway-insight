@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import selectinload
 
+from takeaway_insight.availability import OFFICIAL_API_UNAVAILABLE
 from takeaway_insight.contracts import ConnectionConfig, NormalizedOrder, Platform, ProviderError
 from takeaway_insight.db import Database
 from takeaway_insight.models import (
@@ -56,7 +57,7 @@ class MerchantInput(BaseModel):
     @classmethod
     def known_timezone(cls, value):
         if value != "Asia/Shanghai":
-            raise ValueError("当前两平台仅支持 Asia/Shanghai 时区的中国营业日")
+            raise ValueError("当前三平台仅支持 Asia/Shanghai 时区的中国营业日")
         try:
             ZoneInfo(value)
         except ZoneInfoNotFoundError as error:
@@ -129,7 +130,7 @@ class InsightService:
         if merchant_id is not None:
             filters.append(Order.merchant_id == merchant_id)
         if platform is not None:
-            if platform not in ("eleme", "jd"):
+            if platform not in ("meituan", "eleme", "jd"):
                 raise ValueError("不支持的平台")
             filters.append(Merchant.platform == platform)
         return filters
@@ -151,13 +152,8 @@ class InsightService:
             "enabled": m.enabled,
             "is_demo": m.is_demo,
             "sync_interval_minutes": m.sync_interval_minutes,
-            "connector_status": "演示数据，禁止平台同步"
-            if m.is_demo
-            else (
-                "已实现，待真实门店联调"
-                if m.platform == "eleme"
-                else "已实现；官方响应说明存在矛盾，待真实门店联调"
-            ),
+            "connector_status": "演示数据，禁止平台同步" if m.is_demo else OFFICIAL_API_UNAVAILABLE,
+            "official_api_available": False,
             "configured": not missing,
             "missing_configuration": missing,
             "next_sync_at": m.next_sync_at.isoformat() if m.next_sync_at else None,
@@ -638,6 +634,10 @@ class InsightService:
                         "platform": o.merchant.platform,
                         "business_date": o.business_date.isoformat(),
                         "placed_at": o.placed_at.isoformat(),
+                        "completed_at": o.completed_at.isoformat() if o.completed_at else None,
+                        "updated_at": o.source_updated_at.isoformat()
+                        if o.source_updated_at
+                        else None,
                         "status": o.status,
                         "refund_status": o.refund_status,
                         "total_amount": money(o.total_amount),
@@ -652,6 +652,9 @@ class InsightService:
                                 "refunded_quantity": number(line.refunded_quantity),
                                 "unit": line.unit,
                                 "sku_id": line.sku_id,
+                                "unit_price": money(line.unit_price)
+                                if line.unit_price is not None
+                                else None,
                                 "components": [
                                     {
                                         "id": c.id,
