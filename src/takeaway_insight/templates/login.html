@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>登录 · 餐账</title><link rel="icon" href="/static/brand.svg" type="image/svg+xml"><link rel="stylesheet" href="/static/app.css"></head>
+<body class="login-page">
+  <div class="login-story"><a class="brand" href="/login"><img src="/static/brand.svg" width="44" height="44" alt=""><span>餐账<small>每一份，都有数</small></span></a><div class="login-story-copy"><div class="ledger-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div><h1>生意忙得过来，<br>账也看得明白。</h1><p>把每个平台的订单理在一起，<br>把套餐里的每一份记清楚。</p></div><small>订单明细 / 商品销量 / 经营分析</small></div>
+  <main class="login-panel"><div class="login-card"><p class="section-kicker">门店经营工作台</p><h2>欢迎回来</h2><p class="muted">这里登录餐账管理员账号，不是美团、饿了么或京东商家账号。</p><form method="post" action="/login"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="field"><label for="username">用户名</label><input id="username" name="username" autocomplete="username" required value="admin" autofocus></div><div class="field"><label for="password">密码</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>{% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}<button class="button full-width" type="submit">进入工作台</button></form><p class="login-help">首次登录？账号和随机密码保存在部署目录的 <code>.env</code> 配置中。</p></div><p class="login-footer">自有门店数据，集中管理。</p></main>
+</body>
+</html>

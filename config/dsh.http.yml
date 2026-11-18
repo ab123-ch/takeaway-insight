@@ -1,0 +1,9 @@
+# DSH 进程需继承 TAKEAWAY_MCP_TOKEN。远程服务器请改为 HTTPS 地址。
+- id: mcp-takeaway
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: takeaway
+    transport: streamable-http
+    url: http://127.0.0.1:8765/mcp
+    headers:
+      Authorization: !!js '`Bearer ${process.env.TAKEAWAY_MCP_TOKEN}`'

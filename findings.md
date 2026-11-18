@@ -14,3 +14,10 @@
 ## 未具备条件
 - 尚无两个平台的生产应用凭证、授权 token 和脱敏真实响应样本。
 - 本机 Python 3.14.2，已有 uv，无 Docker、无 dsh。
+
+## 实施核对
+- uv 已选择安装环境 Python 3.12.12；uv.lock 锁定 FastAPI 0.163.1、SQLAlchemy 2.1.9、APScheduler 3.11.3、MCP 1.30.0 等实际解析版本。
+- 智脑远端 GitHub 仓库是 PUBLIC，目标新仓库应沿用 ab123-ch 账号和公开可见性；业务凭证通过 .env 引用，不进入 Git。
+- UI 检索首次落到餐厅营销页，不适用；二次查询得到 Data-Dense Dashboard。仅采用其数据密度、筛选与可访问性指导，不采用营销 Hero/CTA。产品视觉用冷白底、墨绿导航、橙色同步提示，中文系统字体和等宽数字，不依赖在线字体。
+- MCP 已在当前安装版本确认 FastMCP(..., stateless_http=True, json_response=True, streamable_http_path='/') 和 streamable_http_app() API。
+- DSH 专项研究：@deepseek-ai/dsh-mcp-client 是 Cordis YAML 插件配置，stdio/streamable-http；不能套用 Claude mcpServers 格式。已发布版本与 master 的 credential 模板能力不同，文档需标明版本。

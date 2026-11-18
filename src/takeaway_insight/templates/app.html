@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="color-scheme" content="light">
+  <title>餐账 · 门店经营工作台</title>
+  <link rel="icon" href="/static/brand.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/agent-tasks.js" defer></script><script src="/static/app.js" defer></script>
+</head>
+<body data-page="{{ page }}">
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <aside class="sidebar" id="sidebar" aria-label="工作台导航">
+    <a class="brand" href="/" aria-label="餐账首页"><img src="/static/brand.svg" alt="" width="38" height="38"><span>餐账<small>每一份，都有数</small></span></a>
+    <div class="nav-label">经营工作台</div>
+    <nav aria-label="主导航">
+      {% set links = [('dashboard','/','经营概览','overview'), ('agents','/agents','Agent 定时任务','sync'), ('orders','/orders','订单明细','orders'), ('sales','/sales','商品销量','sales'), ('rules','/rules','套餐拆分','split'), ('merchants','/merchants','门店接入','store'), ('syncs','/syncs','旧 API 记录','sync'), ('mcp-guide','/mcp-guide','MCP 分析接入','mcp')] %}
+      {% for key, path, label, icon in links %}<a href="{{ path }}" class="nav-link{% if page == key %} active{% endif %}"{% if page == key %} aria-current="page"{% endif %}><span class="nav-icon" data-icon="{{ icon }}" aria-hidden="true"></span>{{ label }}</a>{% endfor %}
+    </nav>
+    <div class="sidebar-bottom"><span class="quiet-dot"></span><span>订单留痕 · 按店管理</span><p>供货判断，从准确的销量开始。</p></div>
+  </aside>
+  <button class="sidebar-shade" id="sidebar-shade" aria-label="关闭导航" hidden></button>
+  <div class="workspace">
+    <header class="topbar">
+      <div class="topbar-left"><button class="icon-button mobile-menu" id="menu-toggle" aria-label="打开导航" aria-controls="sidebar" aria-expanded="false"><span data-icon="menu" aria-hidden="true"></span></button><span class="breadcrumb">门店经营 <span aria-hidden="true">/</span> <strong id="breadcrumb-title">工作台</strong></span></div>
+      <div class="account"><span class="avatar" aria-hidden="true">{{ username[:1]|upper }}</span><span>{{ username }}</span><button class="text-button" id="logout">退出</button></div>
+    </header>
+    <main id="main-content" tabindex="-1">
+      <div class="page-heading"><div><h1 id="page-title">经营概览</h1><p id="page-subtitle">从订单到单品，看清今天的生意。</p></div><div id="page-actions" class="button-row"></div></div>
+      <div id="global-error" class="notice error" role="alert" hidden></div>
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+      <section class="filter-bar" id="filter-bar" aria-label="筛选条件" hidden>
+        <div class="filter-group"><label for="merchant-filter">门店</label><select id="merchant-filter"><option value="">全部门店</option></select></div>
+        <div class="filter-group"><label for="platform-filter">平台</label><select id="platform-filter"><option value="">全部平台</option><option value="meituan">美团外卖</option><option value="eleme">饿了么 / 淘宝闪购</option><option value="jd">京东秒送</option></select></div>
+        <div class="filter-group date-filter"><label for="start-date">营业日期</label><div class="date-range"><input type="date" id="start-date" aria-label="开始日期"><span aria-hidden="true">至</span><input type="date" id="end-date" aria-label="结束日期"></div></div>
+        <div class="filter-shortcuts" aria-label="日期快捷选择"><button class="text-button" data-action="today">今天</button><button class="text-button" data-action="week">近 7 天</button><button class="button compact" id="apply-filter">查询</button></div>
+      </section>
+      <div id="demo-notice" class="notice demo" hidden><span data-icon="info" aria-hidden="true"></span><span>当前筛选包含<strong>演示门店</strong>。样例订单仅供体验，分析真实经营时请选定真实门店。</span></div>
+      <div id="page-content" aria-live="polite"><div class="loading-state" role="status"><span class="spinner" aria-hidden="true"></span>正在读取门店数据…</div></div>
+      <noscript><div class="notice error">此工作台需要启用 JavaScript 才能查询订单和保存配置。</div></noscript>
+      <footer class="workspace-footer"><span>餐账 · 门店经营工作台</span><span>销量按门店本地营业日归属</span></footer>
+    </main>
+  </div>
+  <dialog id="editor" aria-labelledby="editor-title"><div class="dialog-heading"><div><p class="section-kicker" id="editor-kicker">门店设置</p><h2 id="editor-title">编辑</h2></div><button class="icon-button" id="close-editor" aria-label="关闭编辑窗口"><span data-icon="close" aria-hidden="true"></span></button></div><div id="editor-body"></div></dialog>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# 把 /absolute/project 替换为本工程的绝对路径。工程 .env 不进入 Git。
+- id: mcp-takeaway
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: takeaway
+    transport: stdio
+    command: uv
+    args:
+      - --directory
+      - /absolute/project
+      - run
+      - takeaway-mcp
+    cwd: /absolute/project
